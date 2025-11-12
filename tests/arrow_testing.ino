@@ -1,5 +1,3 @@
-//IMPORTANT: The color format seems RGB565.. but for some reason the colors aren't the ones expected...
-
 #include <TFT.h> // Arduino LCD library
 #include <SPI.h>
 // pin definition for the Uno
@@ -23,11 +21,11 @@ void setup() {
   TFTscreen.background(0, 0, 0);
   TFTscreen.setRotation(2);
 
-  //Check colors at: https://rgbcolorpicker.com/565
-  ArrowLeft(125, 50, ARROW_WIDTH, ARROW_HEIGHT, 0x037D);
-  ArrowUp(95, 50, ARROW_WIDTH, ARROW_HEIGHT, 0xFEE0);
-  ArrowDown(75, 50, ARROW_WIDTH, ARROW_HEIGHT, 0x1425);
-  ArrowRight(45, 50, ARROW_WIDTH, ARROW_HEIGHT, 0x0B17);
+  //A cor usada nas funnções fillRect e fillTriangle está no formato BGR565
+  ArrowLeft(125, 50, ARROW_WIDTH, ARROW_HEIGHT, 0x28FF);
+  ArrowUp(95, 50, ARROW_WIDTH, ARROW_HEIGHT, 0x07FF);
+  ArrowDown(75, 50, ARROW_WIDTH, ARROW_HEIGHT, 0x0640);
+  ArrowRight(45, 50, ARROW_WIDTH, ARROW_HEIGHT, 0xF800);
 
   //int a = TFTscreen.width();
   //Serial.print(String(a));
@@ -35,7 +33,7 @@ void setup() {
   //TFTscreen.line(0, 0, a/2, 0);
 }
 
-void ArrowDown(int x, int y, int width, int height, uint32_t color) {
+void ArrowDown(int x, int y, int width, int height, uint16_t color) {
   //Nota: As coordenadas x, y correspondem à ponta da seta (ponta do triangulo)
 
   //Proporções
@@ -56,7 +54,7 @@ void ArrowDown(int x, int y, int width, int height, uint32_t color) {
   */
 }
 
-void ArrowUp(int x, int y, int width, int height, uint32_t color) {
+void ArrowUp(int x, int y, int width, int height, uint16_t color) {
   //Nota: As coordenadas x, y correspondem à ponta da seta (ponta do triangulo)
 
   //Proporções
@@ -77,7 +75,7 @@ void ArrowUp(int x, int y, int width, int height, uint32_t color) {
   */
 }
 
-void ArrowLeft(int x, int y, int width, int height, uint32_t color) {
+void ArrowLeft(int x, int y, int width, int height, uint16_t color) {
   //Nota: As coordenadas x, y correspondem à ponta da seta (ponta do triangulo)
 
   //Proporções
@@ -98,7 +96,7 @@ void ArrowLeft(int x, int y, int width, int height, uint32_t color) {
   */
 }
 
-void ArrowRight(int x, int y, int width, int height, uint32_t color) {
+void ArrowRight(int x, int y, int width, int height, uint16_t color) {
   //Nota: As coordenadas x, y correspondem à ponta da seta (ponta do triangulo)
 
   //Proporções
