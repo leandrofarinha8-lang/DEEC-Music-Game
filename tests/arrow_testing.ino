@@ -181,10 +181,10 @@ void setup() {
 }
 
 Arrow arrows[] = {
-    Arrow(LEFT,   1000,  3000),
-    Arrow(UP,     1500,  3500),
-    Arrow(DOWN,   1800,  4200),
-    Arrow(RIGHT,  2200,  5000),
+    Arrow(LEFT,1000,3000),
+    Arrow(UP,1500,3500),
+    Arrow(DOWN,1800,4200),
+    Arrow(RIGHT,2200,5000),
 };
 
 #define NUM_ARROWS (sizeof(arrows)/sizeof(arrows[0]))
