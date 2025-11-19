@@ -1,0 +1,59 @@
+#define BUZZER 8
+
+// Frequências da melodia (0 = pausa)
+int crazy_frog_melody[] = {
+    440, 523, 440, 440, 587, 440, 392,
+    440, 659, 440, 440, 698, 659, 523,
+    440, 659, 880, 440, 392, 392, 330, 494,
+    440, 0,
+
+    440, 523, 440, 440, 587, 440, 392,
+    440, 659, 440, 440, 698, 659, 523,
+    440, 659, 880, 440, 392, 392, 330, 494,
+    440, 0,
+
+    220, 196, 165, 147,
+
+    440, 523, 440, 440, 587, 440, 392,
+    440, 659, 440, 440, 698, 659, 523,
+    440, 659, 880, 440, 392, 392, 330, 494,
+    440
+};
+
+// Duração de cada nota em ms
+int crazy_frog_durations[] = {
+    300, 300, 150, 150, 300, 150, 300,
+    300, 300, 150, 150, 300, 300, 300,
+    150, 300, 300, 150, 300, 150, 300, 300,
+    300, 150,
+
+    300, 300, 150, 150, 300, 150, 300,
+    300, 300, 150, 150, 300, 300, 300,
+    150, 300, 300, 150, 300, 150, 300, 300,
+    300, 150,
+
+    400, 400, 400, 400,
+
+    300, 300, 150, 150, 300, 150, 300,
+    300, 300, 150, 150, 300, 300, 300,
+    150, 300, 300, 150, 300, 150, 300, 300,
+    300
+};
+
+void setup() {
+  pinMode(BUZZER, OUTPUT);
+
+}
+
+void loop() {
+    int n = sizeof(crazy_frog_melody)/sizeof(crazy_frog_melody[0]);
+    for (int i = 0; i < n; i++) {
+        if (crazy_frog_melody[i] == 0) {
+            delay(crazy_frog_durations[i]); // pausa
+        } else {
+            tone(BUZZER, crazy_frog_melody[i], crazy_frog_durations[i]);
+            delay(crazy_frog_durations[i] * 1.3); // separação entre notas
+        }
+    }
+    delay(1000); // pausa antes de repetir a melodia
+}
