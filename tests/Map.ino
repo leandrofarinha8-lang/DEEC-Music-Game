@@ -336,7 +336,7 @@ class GameMap{ //Tem que ter: Logica do jogo, socre, combo, ver acertos e falhas
         closestArrow->visible = false;
         closestArrow->eraseCurrent();
 
-        if (closestDist <= 10) return HIT_EXCELLENT;
+        if (closestDist <= 10) return HIT_EXCELLENT; //preciso de meter o combo ao barulho...
         else if (closestDist <= 20) return HIT_GOOD;
         else return HIT_MISS;
     }
@@ -346,15 +346,15 @@ class GameMap{ //Tem que ter: Logica do jogo, socre, combo, ver acertos e falhas
 
   void ScoresHandle(char result) {
     //Prints para debug (e talvvez até deixemos assim)
-
+    float combo_bonus = 1.0 + (combo * 0.05); // +5% de bonus
     switch(result) {
         case HIT_EXCELLENT:
-            score += 100;
+            score += (int)100*combo_bonus;
             combo++;
             Serial.println("EXCELLENT!");
             break;
         case HIT_GOOD:
-            score += 50;
+            score += (int)50*combo_bonus;
             combo++;
             Serial.println("GOOD!");
             break;
@@ -399,4 +399,5 @@ void setup() {
 void loop() {
   map1.play();
 }
+
 
