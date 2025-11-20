@@ -1,0 +1,42 @@
+// This will be used to See the directories stored on a 'Maps' folder (each directory will be a map)
+// Turns out 32 kb is not that much....
+// This will have a lower priority compared to the pause utility with he sensor and the dark-mode with the LDR
+
+#include <SD.h>
+#include <TFT.h>
+#include <SPI.h>
+
+#define cs  10
+#define dc   8
+#define rst  9
+#define sd    4
+
+TFT TFTscreen = TFT(cs, dc, rst); //TFT might not be needed for SD reads
+
+void printFiles(File dir){ //Note: There is a method to see if a file is a directory (if I end up doing a directory per map instead of a file)
+  while (true){
+    File entry =  dir.openNextFile();
+    if (! entry){
+      break;
+    }
+    Serial.println(entry.name());
+    entry.close();
+  }
+}
+
+
+
+void setup() {
+  TFTscreen.begin();
+  Serial.begin(9600);
+
+  if (SD.begin(sd)){
+    File dir = SD.open("/DEECDAY");
+    printFiles(dir);
+  }
+}
+
+void loop() {
+
+}
+
