@@ -2,12 +2,14 @@
 //The code may contain some erros since it is in a early stage of development (aka I startted today :\)
 //Also important to note that I modified the ARROW class a bit (I needed some atributes to make it easier to work with on the new class)
 
+#include <SD.h>
 #include <TFT.h> // Arduino LCD library
 #include <SPI.h>
 //--pin definition for the Uno--
 #define cs 10
 #define dc 8
 #define rst 9
+#define sd 4
 //------------------------------
 
 //----Arrows stuff-----
@@ -40,12 +42,31 @@
 //-------------------------------
 
 //Butões (a certo ponto seram pressure-pads mas é indiferente) [SÃO NUMEROS ALEATORIOS NÃO SÃO JÁ OS PINOS]
-#define BTN_LEFT 3
+#define BTN_LEFT 2
 #define BTN_UP 3
 #define BTN_DOWN 3
 #define BTN_RIGHT 3
 
 TFT TFTscreen = TFT(cs, dc, rst);
+
+bool ImageToScreen(int x, int y, char * name){
+  //Assumes TFT.begin() was done
+
+  if (!SD.begin(sd)) { //problems with the sd
+    Serial.println(F("failed sd!"));
+    return false;
+  }
+
+  PImage img = TFTscreen.loadImage(name); //name ex: "DEEC.bmp"
+  
+  if (!img.isValid()) { //Problems with image format
+    Serial.println(F("failed image format!"));
+    return false; 
+  }
+  TFTscreen.image(img, x, y);
+
+  return true;
+}
 
 enum{
   LEFT,
@@ -82,7 +103,7 @@ bool debouncedInput(int type){
   bool currentState = digitalRead(btn);
   unsigned long currentTime = millis();
 
-  if (currentState == HIGH && lastState[index] == LOW && (currentTime - lastPressTime[index]) > 50) { //O estado mudou, e passou pelo menos 'x' tempo desde a ultima mudança
+  if (currentState == LOW && lastState[index] != currentState && (currentTime - lastPressTime[index]) > 50) { //O estado mudou, e passou pelo menos 'x' tempo desde a ultima mudança
       lastPressTime[index] = currentTime;
       lastState[index] = currentState;
       return true;
@@ -202,7 +223,7 @@ class Arrow{
   void update(unsigned long current_time){ //Atualiza atributos da seta baseando-se no tempo
     
     if (current_time < startTime || current_time > endTime) return; //Ainda não apareceu ou já saiu da tela (não há nada para atualizar)
-
+    if (missed) return; //para a seta não dar mais updates quando é errada
     //Se já apareceu é preciso atualizar a posição atual (y)
 
     if (current_time <= startTime) //Ainda não apareceu
@@ -254,14 +275,16 @@ class GameMap{ //Tem que ter: Logica do jogo, socre, combo, ver acertos e falhas
     //Start time e end time são irrelevante pq estas setas não vao ser atualizadas
 
     //Pequena pausa para dar tempo de desenhar
-    StartTime = millis();
     LastUpdate = 0;
     playing = true;
+
+    //Carregar background do nivel (vai ter que ser obtido numa variavvel no futuro)
+    ImageToScreen(0, 0, "frog.bmp");
+    StartTime = millis();
   }
 
   void play() {
-      if (!playing) return;
-      
+      if (!playing) return; 
 
       if(millis() - LastUpdate > 25){
       LastUpdate = millis();
@@ -283,6 +306,10 @@ class GameMap{ //Tem que ter: Logica do jogo, socre, combo, ver acertos e falhas
               currentA.visible = false;
               Serial.println("MISS");
               combo = 0; // resetar combo
+              Serial.print("Score: "); 
+              Serial.println(score);
+              Serial.print("Combo: "); 
+              Serial.println(combo);
           }
       }
 
@@ -295,6 +322,14 @@ class GameMap{ //Tem que ter: Logica do jogo, socre, combo, ver acertos e falhas
       right.drawColor(0xFFFF,HIT_Y);
       up.drawColor(0xFFFF,HIT_Y);
       down.drawColor(0xFFFF,HIT_Y);
+
+      /*Text testing (need to show score and combo)
+      TFTscreen.stroke(0xFFFF);
+      TFTscreen.setTextSize(1);
+      TFTscreen.setRotation(1);
+      TFTscreen.text("Hello", 50, 120);
+      TFTscreen.setRotation(2);
+      */
 
       //Ler os Inputs do jogador (Tenho que usar debounce porque o loop vai executar rapidamente)
 
@@ -333,12 +368,13 @@ class GameMap{ //Tem que ter: Logica do jogo, socre, combo, ver acertos e falhas
     }
 
     if (closestArrow){
-        closestArrow->visible = false;
-        closestArrow->eraseCurrent();
+      closestArrow->eraseCurrent();
+      closestArrow->visible = false;
+      closestArrow->missed = true;//not missed but this stops updates
 
-        if (closestDist <= 10) return HIT_EXCELLENT; //preciso de meter o combo ao barulho...
-        else if (closestDist <= 20) return HIT_GOOD;
-        else return HIT_MISS;
+      if (closestDist <= 10) return HIT_EXCELLENT; //preciso de meter o combo ao barulho...
+      else if (closestDist <= 20) return HIT_GOOD;
+      else return HIT_MISS;
     }
 
     return HIT_MISS; // nenhuma seta do tipo correto
@@ -375,6 +411,17 @@ Arrow arrows[] = {
     Arrow(UP, 1500, 3500),
     Arrow(DOWN, 1800, 4200),
     Arrow(RIGHT, 2200, 5000),
+    Arrow(LEFT, 2600, 5600),
+    Arrow(UP, 3000, 6200),
+    Arrow(DOWN, 3400, 6800),
+    Arrow(RIGHT, 3800, 7400),
+    Arrow(LEFT, 4200, 8000),
+    Arrow(UP, 4600, 8600),
+    Arrow(DOWN, 5000, 9200),
+    Arrow(RIGHT, 5400, 9800),
+    Arrow(LEFT, 5800, 10400),
+    Arrow(UP, 6200, 11000),
+    Arrow(DOWN, 6600, 11600),
 };
 
 #define NUM_ARROWS (sizeof(arrows)/sizeof(arrows[0]))
@@ -382,6 +429,10 @@ GameMap map1(arrows, NUM_ARROWS);
 void setup() {
   // initialize the serial port
   Serial.begin(9600);
+  pinMode(BTN_LEFT, INPUT_PULLUP);
+  pinMode(BTN_UP, INPUT_PULLUP);
+  pinMode(BTN_DOWN, INPUT_PULLUP);
+  pinMode(BTN_RIGHT, INPUT_PULLUP);
   // initialize the display
   TFTscreen.begin();
   // clear the screen with a pretty color
@@ -399,5 +450,6 @@ void setup() {
 void loop() {
   map1.play();
 }
+
 
 
