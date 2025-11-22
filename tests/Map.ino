@@ -247,6 +247,11 @@ class Arrow{
     }
   }
 };
+//Setas permanentes no sitio dos acertos
+Arrow left(LEFT, 0, 0);
+Arrow right(RIGHT, 0, 0);
+Arrow up(UP, 0, 0);
+Arrow down(DOWN, 0, 0);
 
 class GameMap{ //Tem que ter: Logica do jogo, socre, combo, ver acertos e falhas, desenhar elementos permanentes (setas de acerto, background, ...)
   public:
@@ -279,7 +284,7 @@ class GameMap{ //Tem que ter: Logica do jogo, socre, combo, ver acertos e falhas
     playing = true;
 
     //Carregar background do nivel (vai ter que ser obtido numa variavvel no futuro)
-    ImageToScreen(0, 0, "frog.bmp");
+    ImageToScreen(0, 0, "SapoDay.bmp");
     StartTime = millis();
   }
 
@@ -313,11 +318,7 @@ class GameMap{ //Tem que ter: Logica do jogo, socre, combo, ver acertos e falhas
           }
       }
 
-      //Setas permanentes no sitio dos acertos
-      Arrow left(LEFT, 0, 0);
-      Arrow right(RIGHT, 0, 0);
-      Arrow up(UP, 0, 0);
-      Arrow down(DOWN, 0, 0);
+      //Desenha as setas permanentes no sitio dos acertos
       left.drawColor(0xFFFF,HIT_Y);
       right.drawColor(0xFFFF,HIT_Y);
       up.drawColor(0xFFFF,HIT_Y);
@@ -414,11 +415,11 @@ Arrow arrows[] = {
     Arrow(LEFT, 2600, 5600),
     //Arrow(UP, 3000, 6200),
     //Arrow(DOWN, 3400, 6800),
-    //Arrow(RIGHT, 3800, 7400),
+    Arrow(RIGHT, 3800, 7400),
     Arrow(LEFT, 4200, 8000),
     //Arrow(UP, 4600, 8600),
     //Arrow(DOWN, 5000, 9200),
-    //Arrow(RIGHT, 5400, 9800),
+    Arrow(RIGHT, 5400, 9800),
     Arrow(LEFT, 5800, 10400),
     //Arrow(UP, 6200, 11000),
     //Arrow(DOWN, 6600, 11600),
@@ -450,7 +451,3 @@ void setup() {
 void loop() {
   map1.play();
 }
-
-
-
-
