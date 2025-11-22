@@ -36,9 +36,9 @@
 #define HIT_Y 140
 
 //Nota que está em pixeis (ou seja usamos a distancia)
-#define HIT_EXCELLENT 10  
-#define HIT_GOOD 20
-#define HIT_MISS 30
+#define HIT_EXCELLENT 3  
+#define HIT_GOOD 5
+#define HIT_MISS 10
 //-------------------------------
 
 //Butões (a certo ponto seram pressure-pads mas é indiferente) [SÃO NUMEROS ALEATORIOS NÃO SÃO JÁ OS PINOS]
@@ -370,10 +370,10 @@ class GameMap{ //Tem que ter: Logica do jogo, socre, combo, ver acertos e falhas
     if (closestArrow){
       closestArrow->eraseCurrent();
       closestArrow->visible = false;
-      closestArrow->missed = true;//not missed but this stops updates
+      closestArrow->missed = true;//not missed but this stops updates (é como se a seta contasse como 'já acertada')
 
-      if (closestDist <= 10) return HIT_EXCELLENT; //preciso de meter o combo ao barulho...
-      else if (closestDist <= 20) return HIT_GOOD;
+      if (closestDist <= HIT_EXCELLENT) return HIT_EXCELLENT; //preciso de meter o combo ao barulho...
+      else if (closestDist <= HIT_GOOD) return HIT_GOOD;
       else return HIT_MISS;
     }
 
@@ -408,20 +408,20 @@ class GameMap{ //Tem que ter: Logica do jogo, socre, combo, ver acertos e falhas
 
 Arrow arrows[] = {
     Arrow(LEFT, 1000, 3000),
-    Arrow(UP, 1500, 3500),
-    Arrow(DOWN, 1800, 4200),
-    Arrow(RIGHT, 2200, 5000),
+    //Arrow(UP, 1500, 3500),
+    //Arrow(DOWN, 1800, 4200),
+    //Arrow(RIGHT, 2200, 5000),
     Arrow(LEFT, 2600, 5600),
-    Arrow(UP, 3000, 6200),
-    Arrow(DOWN, 3400, 6800),
-    Arrow(RIGHT, 3800, 7400),
+    //Arrow(UP, 3000, 6200),
+    //Arrow(DOWN, 3400, 6800),
+    //Arrow(RIGHT, 3800, 7400),
     Arrow(LEFT, 4200, 8000),
-    Arrow(UP, 4600, 8600),
-    Arrow(DOWN, 5000, 9200),
-    Arrow(RIGHT, 5400, 9800),
+    //Arrow(UP, 4600, 8600),
+    //Arrow(DOWN, 5000, 9200),
+    //Arrow(RIGHT, 5400, 9800),
     Arrow(LEFT, 5800, 10400),
-    Arrow(UP, 6200, 11000),
-    Arrow(DOWN, 6600, 11600),
+    //Arrow(UP, 6200, 11000),
+    //Arrow(DOWN, 6600, 11600),
 };
 
 #define NUM_ARROWS (sizeof(arrows)/sizeof(arrows[0]))
@@ -450,6 +450,7 @@ void setup() {
 void loop() {
   map1.play();
 }
+
 
 
 
