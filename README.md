@@ -14,3 +14,5 @@ duration (ms) <br />
 ArrowNum <br />
 ArrowsArray <br />
 (format: type, startTime, endTime) type should be the constant value defined on the code for each direction (or maybe a char like 'L' , 'U', 'D' or 'R') <br />
+
+IMPORTANT NOTE: SD.h allows a max of 8 char for file name and 3 for a file extension.
