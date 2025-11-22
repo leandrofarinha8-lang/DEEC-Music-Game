@@ -5,3 +5,12 @@ On the *tests* folder the files should be able to run by themselves (or have the
 
 ## Data
 At some point this should be the things you need to store on the SD.
+
+## Maps File format
+Probably a single file with the format:
+
+Map name
+duration (ms)
+ArrowNum
+ArrowsArray
+(format: type, startTime, endTime) type should be the constant value defined on the code for each direction (or maybe a char like 'L' , 'U', 'D' or 'R')
