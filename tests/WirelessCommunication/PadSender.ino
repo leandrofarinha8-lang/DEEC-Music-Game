@@ -1,8 +1,10 @@
+//NOTA: O meu ESP será o receiver
+
 #include <WiFi.h>
 #include <esp_now.h>
 
 // Receiver MAC address (replace with your receiver ESP MAC)
-uint8_t receiverMAC[] = {0x24, 0x6F, 0x28, 0xAA, 0xBB, 0xCC};
+uint8_t receiverMAC[] = {0xf0, 0xf5, 0xbd, 0x05, 0xce, 0x60};
 
 // Pin definitions
 #define BTN_LEFT 3
