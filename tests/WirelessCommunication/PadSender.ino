@@ -1,10 +1,10 @@
 #include <WiFi.h>
 #include <esp_now.h>
 
-// Receiver MAC address
+// Receiver MAC address (replace with your receiver ESP MAC)
 uint8_t receiverMAC[] = {0x24, 0x6F, 0x28, 0xAA, 0xBB, 0xCC};
 
-// Pins
+// Pin definitions
 #define BTN_LEFT 3
 #define BTN_UP 4
 #define BTN_DOWN 5
@@ -25,10 +25,11 @@ struct PadState {
   bool down;
 };
 
+// Debounce control
 unsigned long lastPressTime[4] = {0, 0, 0, 0};
 bool lastState[4] = {LOW, LOW, LOW, LOW};
 
-// Debounce function
+// Debounce function: returns true if button is pressed (LOW)
 bool debouncedInput(int type){
   int btn;
   int index;
@@ -103,6 +104,6 @@ void loop() {
     Serial.println(pads.right);
   }
 
-  delay(10);
+  delay(10); // small delay
 }
 
