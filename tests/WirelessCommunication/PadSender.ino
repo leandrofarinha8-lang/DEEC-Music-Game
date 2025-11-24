@@ -1,5 +1,3 @@
-//NOTA: O meu ESP será o receiver
-
 #include <WiFi.h>
 #include <esp_now.h>
 
@@ -19,7 +17,7 @@ enum {
   RIGHT
 };
 
-// Struct for sending pad state
+// Acaba por ser mais facil trabalhar com uma struct
 struct PadState {
   bool left;
   bool right;
@@ -27,11 +25,9 @@ struct PadState {
   bool down;
 };
 
-// Debounce control
 unsigned long lastPressTime[4] = {0, 0, 0, 0};
 bool lastState[4] = {LOW, LOW, LOW, LOW};
 
-// Debounce function: returns true if button is pressed (LOW)
 bool debouncedInput(int type){
   int btn;
   int index;
@@ -46,7 +42,7 @@ bool debouncedInput(int type){
   bool currentState = digitalRead(btn);
   unsigned long currentTime = millis();
 
-  if(currentState == LOW && lastState[index] != currentState && (currentTime - lastPressTime[index]) > 50){
+  if(lastState[index] != currentState && (currentTime - lastPressTime[index]) > 50){
       lastPressTime[index] = currentTime;
       lastState[index] = currentState;
       return true;
@@ -69,20 +65,20 @@ PadState readPads() {
 void setup() {
   Serial.begin(115200);
 
-  // Configure pins
+  //Pinos
   pinMode(BTN_LEFT, INPUT_PULLUP);
   pinMode(BTN_UP, INPUT_PULLUP);
   pinMode(BTN_DOWN, INPUT_PULLUP);
   pinMode(BTN_RIGHT, INPUT_PULLUP);
 
-  // Initialize WiFi and ESP-NOW
+  //Inicializar wifi
   WiFi.mode(WIFI_STA);
   if(esp_now_init() != ESP_OK){
     Serial.println("Error initializing ESP-NOW");
     return;
   }
 
-  // Add peer
+  //Ligação
   esp_now_peer_info_t peer = {};
   memcpy(peer.peer_addr, receiverMAC, 6);
   peer.channel = 0;
@@ -106,6 +102,5 @@ void loop() {
     Serial.println(pads.right);
   }
 
-  delay(10); // small delay
+  delay(10);
 }
-
