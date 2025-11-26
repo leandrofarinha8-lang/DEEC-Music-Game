@@ -716,6 +716,10 @@ void setup(){
   pinMode(PAD_UP, INPUT);
   pinMode(PAD_DOWN, INPUT);
   pinMode(PAD_RIGHT, INPUT);
+  pinMode(echo, INPUT);
+  pinMode(trigger, OUTPUT);
+  pinMode(LDR, INPUT);
+  pinMode(BUZZER, OUTPUT);
   
   //Configuração inicial do ecra
   TFTscreen.begin();
