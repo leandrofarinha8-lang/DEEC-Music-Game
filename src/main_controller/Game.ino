@@ -71,62 +71,6 @@
 char MapNames[MAX_MAPS][MAX_NAME_LENGTH];
 int MapsCount = 0;
 
-/*
-void playMelody(const char* filename, bool reset = false) {
-  static File melodyFile;
-  static unsigned long previousTime = 0;
-  static int currentFrequency = 0;
-  static int currentDuration = 0;
-  static bool fileInitialized = false;
-
-  unsigned long currentTime = millis();
-
-  //Resetar (quando troca de nivel vou precisar)
-  if (reset && fileInitialized) {
-    melodyFile.seek(0);      //Volta ao inicio
-    previousTime = currentTime;
-    currentFrequency = 0;
-    currentDuration = 0;
-    noTone(BUZZER);         
-    return;
-  }
-
-  //Se o ficheiro já está inicializado...
-  if (!fileInitialized) {
-
-    melodyFile = SD.open(filename);
-    if (!melodyFile) {
-      Serial.println("Failed to open melody file!");
-      return;
-    }
-
-    previousTime = currentTime;
-    fileInitialized = true;
-  }
-
-  // Check if it's time to play the next note
-  if (currentTime - previousTime >= currentDuration) {
-    noTone(BUZZER); // Stop previous note
-
-    if (melodyFile.available()) {
-      currentFrequency = melodyFile.parseInt();
-      currentDuration = melodyFile.parseInt();
-
-      Serial.print("Frequency: "); Serial.println(currentFrequency);
-      Serial.print("Duration: "); Serial.println(currentDuration);
-      if (currentFrequency > 0) {
-        tone(BUZZER, currentFrequency, currentDuration);
-      }
-
-      previousTime = currentTime;
-    } else {
-      // End of file: loop back to start
-      melodyFile.seek(0);
-    }
-  }
-}
-*/
-
 void loadMapNames(){
   MapsCount = 0;
 
@@ -151,16 +95,6 @@ void loadMapNames(){
   dir.close();
 }
 
-int choose_map(int choice){
-  if(PUSH_RIGHT){ //depois falta meter o input debounce..
-    choice = (choice == MapsCount-1)? MapsCount-1 : choice+1;
-  }
-  if(PUSH_LEFT){
-    choice = (choice == 0)? 0 : choice+1;
-  }
-
-  return choice; //returna apenas o indice do mapa escolhido
-}
 //------------------------------------------------------------
 
 TFT TFTscreen = TFT(cs, dc, rst);
@@ -434,10 +368,7 @@ class Arrow{
 };
 
 //Setas permanentes no sitio dos acertos
-Arrow left(LEFT, 0, 0);
-Arrow right(RIGHT, 0, 0);
-Arrow up(UP, 0, 0);
-Arrow down(DOWN, 0, 0);
+Arrow Permanent(LEFT, 0, 0);
 
 class GameMap{ //Tem que ter: Logica do jogo, socre, combo, ver acertos e falhas, desenhar elementos permanentes (setas de acerto, background, ...)
   public:
@@ -453,6 +384,9 @@ class GameMap{ //Tem que ter: Logica do jogo, socre, combo, ver acertos e falhas
   int score = 0;
   int combo = 0;
   char FilePath[20];
+  File songFile;
+  unsigned long lastNoteTime = 0;
+  int noteFreq = 0, noteDur = 0;
 
   GameMap(){layout = new Arrow[MAX_ARROWS];}  // construtor vazio
 
@@ -518,6 +452,16 @@ class GameMap{ //Tem que ter: Logica do jogo, socre, combo, ver acertos e falhas
     //Carregar imagem e desenhar setas brancas (sitios a acertar)
     //Start time e end time são irrelevante pq estas setas não vao ser atualizadas
 
+    char songPath[16];
+    strcpy(songPath, FilePath);
+    strcat(songPath, "/SONG");
+
+    songFile = SD.open(songPath);
+    lastNoteTime = millis();
+    noteFreq = 0;
+    noteDur = 0;
+    noTone(BUZZER);
+
     //Pequena pausa para dar tempo de desenhar
     LastUpdate = 0;
     playing = true;
@@ -534,10 +478,9 @@ class GameMap{ //Tem que ter: Logica do jogo, socre, combo, ver acertos e falhas
     }
     //Carregar background do nivel (vai ter que ser obtido numa variavvel no futuro)
     ImageToScreen(0, 0, filename);
-    /*
-    strcat(FilePath, "/SONG"); //Modifies file path! (we don't need the old one since evrything was loaded anad sincne this is an attribute we can use it in play() )
-    playMelody(FilePath, true); //não esquecer de resetar a musica!
-    */
+    
+    //playMelody(FilePath, true); //não esquecer de resetar a musica!
+    
 
     //Antes de começar fazer uam contagem decrescente
     TFTscreen.setRotation(0);
@@ -553,9 +496,43 @@ class GameMap{ //Tem que ter: Logica do jogo, socre, combo, ver acertos e falhas
   }
 
   void play(){
-     if (!playing) return; 
+   unsigned long now = millis();
+if (!playing) return;
 
-    //playMelody(FilePath); //Reset é falso por default;
+if (now - lastNoteTime >= (unsigned long)noteDur) {
+    noTone(BUZZER);
+
+    int c;
+    int value = 0;
+
+    // --- Ler número (super leve, sem validações) ---
+    auto readNum = [&]() {
+        value = 0;
+        // saltar separadores
+        while (songFile.available() && ( (c = songFile.read()) < '0' )) {}
+        // acumular número
+        value = c - '0';
+        while (songFile.available() && ( (c = songFile.read()) >= '0' ))
+            value = value * 10 + (c - '0');
+        return value;
+    };
+
+    if (!songFile.available()) { //Loop em caso de chegar ao fim antes do final da duração do mapa
+        songFile.seek(0);
+    }
+
+    noteFreq = readNum();
+    noteDur  = readNum();
+
+      if (noteFreq > 0) {
+        tone(BUZZER, noteFreq);
+      } 
+      else {
+        noTone(BUZZER); 
+      }
+      lastNoteTime = now;
+    } 
+    //-------------------------------
 
     if(duration <= CurrentTime){
         playing = false;
@@ -597,10 +574,18 @@ class GameMap{ //Tem que ter: Logica do jogo, socre, combo, ver acertos e falhas
       }
 
       //Desenha as setas permanentes no sitio dos acertos
-      left.drawColor(0xFFFF,HIT_Y);
-      right.drawColor(0xFFFF,HIT_Y);
-      up.drawColor(0xFFFF,HIT_Y);
-      down.drawColor(0xFFFF,HIT_Y);
+      Permanent.type = LEFT;
+      Permanent.x = ARROW_LEFT_X;
+      Permanent.drawColor(0xFFFF,HIT_Y);
+      Permanent.type = RIGHT;
+      Permanent.x = ARROW_RIGHT_X;
+      Permanent.drawColor(0xFFFF,HIT_Y);
+      Permanent.type = UP;
+      Permanent.x = ARROW_UP_X;
+      Permanent.drawColor(0xFFFF,HIT_Y);
+      Permanent.type = DOWN;
+      Permanent.x = ARROW_DOWN_X;
+      Permanent.drawColor(0xFFFF,HIT_Y);
 
       //Ler os Inputs do jogador (Tenho que usar debounce porque o loop vai executar rapidamente)
 
@@ -683,27 +668,6 @@ class GameMap{ //Tem que ter: Logica do jogo, socre, combo, ver acertos e falhas
   }
 };
 
-//----Misc Functions (Mainly for code encapsulation)-------
-bool DetectUserInput(){
-
-
-}
-
-void Menu(){ 
-  for(int i=0; i<5; i++){
-    String test = (day == true) ? String("DEECDAY/")+String(i)+String(".bmp") : String("DEECN/")+String(i)+String(".bmp");
-    ImageToScreen(0, 0, test.c_str());
-  }
-}
-
-int MapSelector(){ //retorna o indice do nome do mapa escolhido
-  int current = 0;
-
-
-}
-
-
-
 GameMap CurrentMap;
 
 void setup(){
@@ -720,7 +684,7 @@ void setup(){
   pinMode(trigger, OUTPUT);
   pinMode(LDR, INPUT);
   pinMode(BUZZER, OUTPUT);
-  
+
   //Configuração inicial do ecra
   TFTscreen.begin();
   TFTscreen.background(0, 0, 0);
@@ -741,7 +705,10 @@ void loop(){
     LDRVal();
 
     //----MENU/INTRO----------
-    Menu();
+    for(int i=0; i<5; i++){
+      String test = (day == true) ? String("DEECDAY/")+String(i)+String(".bmp") : String("DEECN/")+String(i)+String(".bmp");
+      ImageToScreen(0, 0, test.c_str());
+    }
     
     //Esperar por um botão para prosseguir o codigo (criar uma função depois)
     blockTillInput();
@@ -779,6 +746,7 @@ void loop(){
     while(CurrentMap.playing){
       CurrentMap.play();
     }
+    noTone(BUZZER); //Força o buzzer a desligar
     
     //---END SCREEN---- (score e assim)
     
