@@ -33,4 +33,4 @@ frequency1 duration1  <br>
 frequency2 duration2  <br>
 ...
 
-Note: a frenquency o 0 is equal to a pause.
+Note: a frenquency of 0 is equal to a pause.
