@@ -6,6 +6,8 @@ On the *tests* folder the files should be able to run by themselves (or have the
 ## Data
 At some point this should be the things you need to store on the SD.
 
+IMPORTANT NOTE: SD.h allows a max of 8 char for file name and 3 for a file extension.
+
 ## Maps File format
 
 type1, startTime1, endTime1
@@ -19,7 +21,6 @@ D,3000,7000  <br>
 R,4000,5000  <br>
 ...
 
-IMPORTANT NOTE: SD.h allows a max of 8 char for file name and 3 for a file extension.
 ## Songs File format
 
 frequency1 duration1  <br>
