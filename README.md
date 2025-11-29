@@ -1,10 +1,12 @@
 # DEEC-Music-Game
 
 ## Tests
-On the *tests* folder the files should be able to run by themselves (or have the least amount of dependencies possible), this will make testing easier. On the src *folder* the code should be more compartimentated and reusable (ex: have a graphics library, pins definitions, etc).
+~On the *tests* folder the files should be able to run by themselves (or have the least amount of dependencies possible), this will make testing easier. On the src *folder* the code should be more compartimentated and reusable (ex: have a graphics library, pins definitions, etc).~
+
+If no more errors are found tests are done.
 
 ## Data
-At some point this should be the things you need to store on the SD.
+This contains all the data that should be stored on the SD for a basic build of the game. If you want to create maps add a folder with the map name to /MAPS and follow the structure described bellow.
 
 IMPORTANT NOTE: SD.h allows a max of 8 char for file name and 3 for a file extension.
 
