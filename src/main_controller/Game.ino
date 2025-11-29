@@ -539,6 +539,7 @@ class GameMap{ //Tem que ter: Logica do jogo, socre, combo, ver acertos e falhas
 
     // Teste com uma 'Lambda' para declarar uma função aqui dentro e poder usar as variaveis c e value dentro da função (é meio esquisito mas funciona bem)
     // ver [https://en.cppreference.com/w/cpp/language/lambda.html ]
+    //Podia ter usado um sscanf( mas assim ficava sem espaço pro buffer das imagens + buffer do SD
     auto readNum = [&]() { //Tive que lever valores à 'moda antiga' para poupar algum espaço (c lê o caracter, value termina com o valor numerico)
         value = 0;
         // Ver se o byte é um numero (todos os numeros são menos que o valor ASCII de '0')
