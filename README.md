@@ -12,6 +12,8 @@ IMPORTANT NOTE: SD.h allows a max of 8 char for file name and 3 for a file exten
 
 ## Maps File format
 
+On the folder you just created for your map store this on a file named MAP
+
 ```
 map_name
 arrow_num
@@ -33,6 +35,8 @@ D,3000,7000
 R,4000,5000
 ```
 ## Songs File format
+
+This should be stored on a file named SONG
 
 ```
 frequency1 duration1
