@@ -783,12 +783,13 @@ void loop(){
     TFTscreen.setTextSize(2);
     do{
       TFTscreen.text(MapNames[i], 40, 55);
-      TFTscreen.fillRect(0, 0, 180, 128, 0x0000); //Apagar texto
       if(debouncedMenuInput(PUSH_RIGHT)){ //depois falta meter o input debounce..
         i = (i == MapsCount-1)? MapsCount-1 : i+1;
+        TFTscreen.fillRect(0, 0, 180, 128, 0x0000); //Apagar texto apenas se o texto mudou
       }
       if(debouncedMenuInput(PUSH_LEFT)){
         i = (i == 0)? 0 : i+1;
+        TFTscreen.fillRect(0, 0, 180, 128, 0x0000); //Apagar texto apenas se o texto mudou
       }
     }while(!DistanceSensorOn());
     TFTscreen.setRotation(2);
