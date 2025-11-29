@@ -1,10 +1,10 @@
 //IMPORTANT NOTE: Most functions don't have error handling (mainly the ones related to the files) since every byte is valuable on arduino
 
-#include <SD.h>
+#include <SD.h> //O SD.h tem que ser incluido antes do TFT.h para poder usar PImage
 #include <TFT.h> // Arduino LCD library
 #include <SPI.h>
 
-//--pin definition for the Uno--
+//--TFT Pins--
 #define cs 10
 #define dc 8
 #define rst 9
@@ -15,7 +15,7 @@
 #define ARROW_WIDTH 15
 #define ARROW_HEIGHT 20
 
-//Posição horizonntal
+//Posição horizonntal das setas
 #define ARROW_LEFT_X 95
 #define ARROW_UP_X 75
 #define ARROW_DOWN_X 55
@@ -43,16 +43,15 @@
 #define PUSH_LEFT 2
 #define PUSH_RIGHT 3
 
-#define MAX_ARROWS 5
-#define MAX_SONG 1 //Numero maximo de notas e durações para uma musica
+#define MAX_ARROWS 3 // Já não é o numero maximo de setas por mapa mas sim o numero maximo de setas EM SIMULTANEO no ecra
+// Removi MAX_SONG (apenas usava isto quando carregava a musica toda de memoria, agora carrego gradualmente)
 
-//Pads (o sinal será enviado por um esp e recebidl nestes pinos, srá nos pinos A)
-#define PAD_LEFT A0
-#define PAD_UP A1
-#define PAD_DOWN A2
-#define PAD_RIGHT A3
+//Pads
+#define PAD_LEFT A0 //é o 3 do Receiver
+#define PAD_UP A1 //é o 4 do Receiver
+#define PAD_DOWN A2 //é o 5 do Receiver
+#define PAD_RIGHT A3 //é o 6 do Receiver
 
-//----PINOS POR DEFINIR------
 //Pinos para o sensor de distancia
 #define echo 5
 #define trigger 6
@@ -64,7 +63,7 @@
 //Pino do buzzer
 #define BUZZER 7
 
-//----Para carregar nomes de mapas para uma array (não abusar na memoria se não as imagens podem falahr)-----
+//----Para carregar nomes de mapas para uma array (não abusar na memoria se não as imagens podem falhar)-----
 #define MAX_MAPS 2
 #define MAX_NAME_LENGTH 13 //O nº de chars permitidos no SD é de 8 para o nome e 3 pra extensão (13 é suficiente para 8 chars de nome + '.' + 3 chars de extensão + '/0')
 
@@ -91,14 +90,14 @@ void loadMapNames(){
 
     newFile.close();
   }
-  //Neste ponto todos os mapas lidos estão na array global, depois no menu é apenas usar os botões pra alterarem o index e o sensor de distancia pra escolher o mapa
+  //Neste ponto todos os (nomes dos) mapas lidos estão na array global, depois no menu é apenas usar os botões pra alterarem o index e o sensor de distancia pra escolher o mapa
   dir.close();
 }
 
 //------------------------------------------------------------
 
 TFT TFTscreen = TFT(cs, dc, rst);
-bool day = true;
+bool day = true; //É usado posteriormente para implementar o Dark Mode
 
 enum{ //Para a direção das setas
   LEFT,
@@ -116,7 +115,7 @@ struct PadState{
 
 PadState Pads = {false, false, false, false};
 
-//-------Pad debounce and check for transition----
+//-------Pad debounce (apenas responde a TRANSIÇÕES)----
 unsigned long lastPadPressTime[4] = {0, 0, 0, 0};
 bool lastPadState[4] = {LOW, LOW, LOW, LOW};
 
@@ -133,7 +132,7 @@ bool debouncedPadInput(int btn){
   bool currentState = digitalRead(btn);
   unsigned long currentTime = millis();
 
-  if(currentState == HIGH && lastPadState[index] != currentState && (currentTime - lastPadPressTime[index]) > 50){ //Vê a transição para HIGH
+  if(currentState == HIGH && lastPadState[index] != currentState && (currentTime - lastPadPressTime[index]) > 10){ //Vê a transição para HIGH
       lastPadPressTime[index] = currentTime;
       lastPadState[index] = currentState;
       return true;
@@ -143,7 +142,7 @@ bool debouncedPadInput(int btn){
   return false;
 }
 //Nota: não vou juntar com a outra função porque os 'botões' em cima nnão têm PULL_UP (a logica é normal) e os de baixo tem PULL_UP (Logica invertida)
-//-----------Menu Buttons---------------
+//-----------Menu Buttons (nnão está junto com os Pads porque aqui usamos INTPUT PULL_UP)---------------
 unsigned long lastMenuPressTime[2] = {0, 0};
 bool lastMenuState[2] = {LOW, LOW};
 
@@ -159,7 +158,7 @@ bool debouncedMenuInput(int btn) {
     bool currentState = digitalRead(btn);
     unsigned long currentTime = millis();
 
-    if (currentState == LOW && lastMenuState[index] != currentState && (currentTime - lastMenuPressTime[index]) > 50) {
+    if (currentState == LOW && lastMenuState[index] != currentState && (currentTime - lastMenuPressTime[index]) > 10) {
         lastMenuPressTime[index] = currentTime;
         lastMenuState[index] = currentState;
         return true;
@@ -169,7 +168,7 @@ bool debouncedMenuInput(int btn) {
     return false;
 }
 //--------------------------------------
-//----TFT Related function--------------
+//----TFT Related functions--------------
 bool ImageToScreen(int x, int y, char * name){
   //Assumes TFT.begin() was done
 
@@ -181,7 +180,7 @@ bool ImageToScreen(int x, int y, char * name){
   }
   TFTscreen.image(img, x, y);
 
-  img.close(); //FINALMENTE RESOLVIDO
+  img.close(); //FINALMENTE RESOLVIDO (isto evita uma memory leak que causava com que as imagem parecem de carregar passado algumas iterações)
   return true;
 }
 //----------------------------------------
@@ -216,8 +215,8 @@ bool DistanceSensorOn(){
 }
 //----------------------------------------
 
-//Função pro LDR
-bool LDRVal(){
+//Função pro LDR (substitui por void em vez de bool porque não retorna nada)
+void LDRVal(){
   int val;
   val=analogRead(LDR);
 
@@ -381,12 +380,15 @@ class GameMap{ //Tem que ter: Logica do jogo, socre, combo, ver acertos e falhas
   String name;
   Arrow * layout;
   int ArrowNum;
+  int TotalArrows; // Total de setas no mapa
   int score = 0;
   int combo = 0;
   char FilePath[20];
   File songFile;
+  File mapFile;
   unsigned long lastNoteTime = 0;
   int noteFreq = 0, noteDur = 0;
+  int currentArrowIndex = 0; //Indice da proxima seta a carregar
 
   GameMap(){layout = new Arrow[MAX_ARROWS];}  // construtor vazio
 
@@ -402,7 +404,7 @@ class GameMap{ //Tem que ter: Logica do jogo, socre, combo, ver acertos e falhas
       return;
     }
 
-    // ---Name---
+    // ---Name--- (não estou a usar name pra nada ainda mas vou deixar por agora)
     name = file.readStringUntil('\n');
     name.trim();
     Serial.println(name);
@@ -410,20 +412,86 @@ class GameMap{ //Tem que ter: Logica do jogo, socre, combo, ver acertos e falhas
     // ---Duration---
     String durationStr = file.readStringUntil('\n');
     durationStr.trim();
-    int duration1 = durationStr.toInt();
+    duration = durationStr.toInt();
 
     // ---Arrow Num---
     String arrowNumStr = file.readStringUntil('\n');
     arrowNumStr.trim();
-    int ArrowNum1 = arrowNumStr.toInt();
-    if (ArrowNum1 > MAX_ARROWS) ArrowNum1 = MAX_ARROWS;
+    TotalArrows = arrowNumStr.toInt();
+    
+    ArrowNum = 0; // Começa com 0 setas carregadas
+    score = 0;
+    combo = 0;
+    currentArrowIndex = 0;
+    
+    file.close();
+  }
 
-    // ---Parse arrows---
-    for (int i = 0; i < ArrowNum1; i++) {
-      if (!file.available()) break;
+  
+  void begin() {
+    //---Criar ponto de acesso ao ficheiro da musica---
+    char songPath[16];
+    strcpy(songPath, FilePath);
+    strcat(songPath, "/SONG");
 
-      String line = file.readStringUntil('\n');
+    songFile = SD.open(songPath);
+    
+    // Abrir arquivo do mapa para leitura progressiva
+    char mapPath[20];
+    strcpy(mapPath, FilePath);
+    strcat(mapPath, "/MAP");
+    mapFile = SD.open(mapPath, FILE_READ);
+    
+    // Saltar informação que não correspnde a setas (já foi carregada no mapLoad)
+    mapFile.readStringUntil('\n'); // nome
+    mapFile.readStringUntil('\n'); // duração
+    mapFile.readStringUntil('\n'); // número total de setas
+    
+    lastNoteTime = millis();
+    noteFreq = 0;
+    noteDur = 0;
+    noTone(BUZZER); //O buzzer as vezes dava erro, isto já resolve isso
+
+    LastUpdate = 0;
+    playing = true;
+    CurrentTime = 0;
+
+    //Obter background do nivel dependendo se é de dia ou noite
+    char filename[20];
+    strcpy(filename, FilePath);
+
+    if(day){
+      strcat(filename, "/D.bmp");
+    }
+    else{
+      strcat(filename, "/N.bmp");
+    }
+
+    //Carregar background do nivel
+    ImageToScreen(0, 0, filename);
+
+    //Antes de começar fazer uma contagem decrescente
+    TFTscreen.setRotation(0);
+    TFTscreen.setTextSize(2);
+    TFTscreen.stroke(255,255,255);
+    for(int i=3; i>0; i--){
+      TFTscreen.text((String(i)).c_str(), 60, 55);
+      delay(1000);
+      TFTscreen.fillRect(50, 0, 20, 100, 0x0000); //Apagar texto
+    }
+    TFTscreen.setRotation(2);
+
+    //Obter o timestamp do começo do mapa
+    StartTime = millis();
+  }
+
+  void loadNextArrows() {
+    // Carrega novas setas (apenas se houver espaço pra isso)
+    while (ArrowNum < MAX_ARROWS && currentArrowIndex < TotalArrows && mapFile.available()) {
+      String line = mapFile.readStringUntil('\n');
       line.trim();
+
+      if (line.length() == 0) continue;
 
       char typeChar;
       unsigned long startTime;
@@ -438,77 +506,42 @@ class GameMap{ //Tem que ter: Logica do jogo, socre, combo, ver acertos e falhas
         case 'R': type = RIGHT; break;
       }
 
-      layout[i] = Arrow(type, startTime, endTime);
-      duration = duration1;
-      ArrowNum = ArrowNum1;
-      score = 0;
-      combo = 0;
-      }
-    file.close();
+      layout[ArrowNum] = Arrow(type, startTime, endTime);
+      ArrowNum++;
+      currentArrowIndex++;
+    }
   }
 
-  
-  void begin() {
-    //Carregar imagem e desenhar setas brancas (sitios a acertar)
-    //Start time e end time são irrelevante pq estas setas não vao ser atualizadas
-
-    char songPath[16];
-    strcpy(songPath, FilePath);
-    strcat(songPath, "/SONG");
-
-    songFile = SD.open(songPath);
-    lastNoteTime = millis();
-    noteFreq = 0;
-    noteDur = 0;
-    noTone(BUZZER);
-
-    //Pequena pausa para dar tempo de desenhar
-    LastUpdate = 0;
-    playing = true;
-    CurrentTime = 0;
-
-    char filename[20];
-    strcpy(filename, FilePath);
-
-    if(day){
-      strcat(filename, "/D.bmp");
+  void removeArrow(int index) {
+    // Remove seta do array e move as que sobram deixando o indice 0 livre
+    for (int i = index; i < ArrowNum - 1; i++) {
+      layout[i] = layout[i + 1];
     }
-    else{
-      strcat(filename, "/N.bmp");
-    }
-    //Carregar background do nivel (vai ter que ser obtido numa variavvel no futuro)
-    ImageToScreen(0, 0, filename);
-    
-    //playMelody(FilePath, true); //não esquecer de resetar a musica!
-    
-
-    //Antes de começar fazer uam contagem decrescente
-    TFTscreen.setRotation(0);
-    TFTscreen.setTextSize(2);
-    TFTscreen.stroke(255,255,255);
-    for(int i=3; i>0; i--){
-      TFTscreen.text((String(i)).c_str(), 60, 55);
-      delay(1000);
-      TFTscreen.fillRect(50, 0, 20, 100, 0x0000); //Apagar texto
-    }
-    TFTscreen.setRotation(2);
-    StartTime = millis();
+    ArrowNum--;
   }
 
   void play(){
    unsigned long now = millis();
-if (!playing) return;
+    if (!playing) return;
 
-if (now - lastNoteTime >= (unsigned long)noteDur) {
+    //Ler valores dos Pads entre frames e usar OR pra preservar o valor se houvver pelo menos um true (usar ground comum entre o esp e o arduino pra reduzir ruido)
+    Pads.left  |= (debouncedPadInput(PAD_LEFT));
+    Pads.up    |= (debouncedPadInput(PAD_UP));
+    Pads.down  |= (debouncedPadInput(PAD_DOWN));
+    Pads.right |= (debouncedPadInput(PAD_RIGHT)); 
+
+  //-----Musica-----
+  if (now - lastNoteTime >= (unsigned long)noteDur) {
     noTone(BUZZER);
 
     int c;
     int value = 0;
 
-    // --- Ler número (super leve, sem validações) ---
-    auto readNum = [&]() {
+    // Teste com uma 'Lambda' para declarar uma função aqui dentro e poder usar as variaveis c e value dentro da função (é meio esquisito mas funciona bem)
+    // ver [https://en.cppreference.com/w/cpp/language/lambda.html ]
+    auto readNum = [&]() { //Tive que lever valores à 'moda antiga' para poupar algum espaço (c lê o caracter, value termina com o valor numerico)
         value = 0;
-        // saltar separadores
+        // Ver se o byte é um numero (todos os numeros são menos que o valor ASCII de '0')
         while (songFile.available() && ( (c = songFile.read()) < '0' )) {}
         // acumular número
         value = c - '0';
@@ -521,10 +554,11 @@ if (now - lastNoteTime >= (unsigned long)noteDur) {
         songFile.seek(0);
     }
 
+    //Le os valores ATUAIS de frequencia e duração
     noteFreq = readNum();
     noteDur  = readNum();
 
-      if (noteFreq > 0) {
+      if (noteFreq > 0) { //pausa caso freq==0
         tone(BUZZER, noteFreq);
       } 
       else {
@@ -534,23 +568,22 @@ if (now - lastNoteTime >= (unsigned long)noteDur) {
     } 
     //-------------------------------
 
-    if(duration <= CurrentTime){
+    if(duration <= CurrentTime){ //Verificação de final de jogo
         playing = false;
+        songFile.close();
+        mapFile.close();
         return;
     }
-      
-    //Ler valores dos Pads entre frames e usar OR pra preservar o valor se houvver pelo menos um true (usar ground comum entre o esp e o arduino pra reduzir ruido)
-    Pads.left  |= (debouncedPadInput(PAD_LEFT));
-    Pads.up    |= (debouncedPadInput(PAD_UP));
-    Pads.down  |= (debouncedPadInput(PAD_DOWN));
-    Pads.right |= (debouncedPadInput(PAD_RIGHT)); 
 
-
+    //-------------Frame------------
     if(millis() - LastUpdate > 25){
       LastUpdate = millis();
       CurrentTime = millis() - StartTime;
 
-      // Atualiza todas as setas
+      // Carregar novas setas se necessário
+      loadNextArrows();
+
+      // Atualiza todas as setas (carregadas)
       for (int i = 0; i < ArrowNum; i++) {
           Arrow &currentA = layout[i];
 
@@ -561,7 +594,7 @@ if (now - lastNoteTime >= (unsigned long)noteDur) {
 
           //Se a seta passou da zona de acerto e ainda está visível é um MISS
           if (!currentA.missed && currentA.visible && currentA.y > HIT_Y + 15 && currentA.y > 10) { //A ultima condição é para evitar um bug
-              currentA.eraseCurrent(); //ERASE APENAS É POSSIVEL QUANDO A SETA ESTÁ VISIVEL!!! (erro de 30 mins btw). Vou deixar a class Arrow como tá pq só faz sentido apagar algo visivel
+              currentA.eraseCurrent(); //ERASE APENAS É POSSIVEL QUANDO A SETA ESTÁ VISIVEL!!! (daí isto aparecer logo no inicio)
               currentA.missed = true;
               currentA.visible = false;
               Serial.println("MISS");
@@ -570,6 +603,10 @@ if (now - lastNoteTime >= (unsigned long)noteDur) {
               Serial.println(score);
               Serial.print("Combo: "); 
               Serial.println(combo);
+              
+              // Se a seta foi falhada ela é removida da array
+              removeArrow(i);
+              i--; // Ajustar indice 
           }
       }
 
@@ -615,10 +652,11 @@ if (now - lastNoteTime >= (unsigned long)noteDur) {
     }
   }
 
-  // Função para processar a tecla apertada
+  // Função para processar os inputs dos Pads
   char processInput(char key) {
     Arrow* closestArrow = nullptr;
     int closestDist = 9999;
+    int closestIndex = -1;
 
     for (int i = 0; i < ArrowNum; i++){ //encontrar a seta mais proxima do HIT_Y
       if (layout[i].visible && !layout[i].missed && layout[i].type == key){ //apenas vê setas visiveis (e do tipo pressionado)
@@ -626,33 +664,39 @@ if (now - lastNoteTime >= (unsigned long)noteDur) {
           if (diff < closestDist){
             closestDist = diff;
             closestArrow = &layout[i];
+            closestIndex = i;
           }
       }
     }
 
-    if (closestArrow){
+    if (closestArrow){ //Encontrando a seta mais proxima do tipo correspondente temos que ver se foi acerto, erro, etc
       closestArrow->eraseCurrent();
       closestArrow->visible = false;
       closestArrow->missed = true;//not missed but this stops updates (é como se a seta contasse como 'já acertada')
+
+      // Remove seta acertada (ou falhada) porque já não está a fazer nada na array
+      if (closestIndex != -1) {
+        removeArrow(closestIndex);
+      }
 
       if (closestDist <= HIT_EXCELLENT) return HIT_EXCELLENT; //preciso de meter o combo ao barulho...
       else if (closestDist <= HIT_GOOD) return HIT_GOOD;
       else return HIT_MISS;
     }
 
-    return HIT_MISS; // nenhuma seta do tipo correto
+    return HIT_MISS; // Se não há nenhuma seta do tipo correto conta como miss há mesma
   }
 
-  void ScoresHandle(char result) {
-    //Prints para debug (e talvvez até deixemos assim)
+  void ScoresHandle(char result) { //Calculo do score e atualização do combo
+    //Prints para debug (e talvez até deixemos assim por causa do requisito de serial communication)
     switch(result) {
         case HIT_EXCELLENT:
-            score += 100 + (combo*0.05);
+            score += 100 + (combo*5);
             combo++;
             Serial.println("EXCELLENT!");
             break;
         case HIT_GOOD:
-            score += 50 + (combo*0.05);
+            score += 50 + (combo*5);
             combo++;
             Serial.println("GOOD!");
             break;
@@ -697,29 +741,45 @@ void setup(){
   loadMapNames();
 }
 
-void blockTillInput(){
+void blockTillInput(){ //Uso duas vezes isto, uma função acaba por poupar espaço e ser mais legivel
   do{delay(10);}while( !(debouncedMenuInput(PUSH_LEFT) || debouncedMenuInput(PUSH_RIGHT) || DistanceSensorOn()) );
 }
 
 void loop(){
+    //NOTA PARA OTIMIZAÇÃO: Substituir ints que assumem apenas valores pequenos por bytes!
+    //Já não é necessário pois as imagens já têm espaço pra carregar (se não houver erros tá terminado!)
     LDRVal();
 
     //----MENU/INTRO----------
-    for(int i=0; i<5; i++){
-      String test = (day == true) ? String("DEECDAY/")+String(i)+String(".bmp") : String("DEECN/")+String(i)+String(".bmp");
-      ImageToScreen(0, 0, test.c_str());
-    }
+    //Substituido por chars em vez de arrays pra poupar espaço
+    char filename[13] = "DEECDAY/0.bmp";
+    const char* prefix_day = "DEECDAY/";
+    const char* prefix_night = "DEECN/";
+
+    for(byte i=0; i<5; i++){
+      // Copy appropriate prefix
+      const char* prefix = day ? prefix_day : prefix_night;
+      byte prefix_len = day ? 8 : 7;
+      memcpy(filename, prefix, prefix_len);
+    
+      // Add number
+      filename[prefix_len] = '0' + i;
+    
+      // Add extension
+      strcpy(filename + prefix_len + 1, ".bmp");
+    
+      ImageToScreen(0, 0, filename);
+  }
     
     //Esperar por um botão para prosseguir o codigo (criar uma função depois)
     blockTillInput();
-
+    
     //-----SELEÇÃO DE MAPA-----
-
+    byte i=0;
     TFTscreen.background(0, 0, 0);
     TFTscreen.setRotation(0);
     TFTscreen.stroke(255,255,255);
     TFTscreen.setTextSize(2);
-    int i = 0;
     do{
       TFTscreen.text(MapNames[i], 40, 55);
       TFTscreen.fillRect(0, 0, 180, 128, 0x0000); //Apagar texto
@@ -731,7 +791,8 @@ void loop(){
       }
     }while(!DistanceSensorOn());
     TFTscreen.setRotation(2);
-    i=1;
+    
+    i=1; //PARA TESTE!!!!!! REMOVER QUANDO ESTIVER MONTADO
     char map_path[15] = "/MAPS/";
     strcat(map_path, MapNames[i]);          // concatena
 
@@ -741,15 +802,12 @@ void loop(){
 
     CurrentMap.begin();
 
-    //Talvez incluir uma contagem de 3, 2, 1 ... GO (no fimd e carregar a imagem e as setas branca [no begin])
-
     while(CurrentMap.playing){
       CurrentMap.play();
     }
     noTone(BUZZER); //Força o buzzer a desligar
     
     //---END SCREEN---- (score e assim)
-    
     TFTscreen.background(0, 0, 0);
     TFTscreen.setRotation(0);
     TFTscreen.stroke(255,255,255);
@@ -759,7 +817,6 @@ void loop(){
     TFTscreen.text(("SCORE: " + String(CurrentMap.score)).c_str(), 45, 55);
     TFTscreen.setRotation(2);
     
-    
-    //Esperar por um botão para prosseguir o codigo (criar uma função depois)
+    //Esperar por um botão para prosseguir o codigo
     blockTillInput();
 }
