@@ -783,7 +783,7 @@ void loop(){
     TFTscreen.setTextSize(2);
     do{
       TFTscreen.text(MapNames[i], 40, 55);
-      if(debouncedMenuInput(PUSH_RIGHT)){ //depois falta meter o input debounce..
+      if(debouncedMenuInput(PUSH_RIGHT)){
         i = (i == MapsCount-1)? MapsCount-1 : i+1;
         TFTscreen.fillRect(0, 0, 180, 128, 0x0000); //Apagar texto apenas se o texto mudou
       }
