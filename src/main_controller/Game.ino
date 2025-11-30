@@ -35,9 +35,9 @@
 #define HIT_Y 140
 
 //Nota que está em pixeis (ou seja usamos a distancia)
-#define HIT_EXCELLENT 5  
+#define HIT_EXCELLENT 3  
 #define HIT_GOOD 10
-#define HIT_MISS 15
+#define HIT_MISS 20
 
 //Butões pro menu
 #define PUSH_LEFT 2
@@ -515,7 +515,7 @@ class GameMap{ //Tem que ter: Logica do jogo, socre, combo, ver acertos e falhas
     // Teste com uma 'Lambda' para declarar uma função aqui dentro e poder usar as variaveis c e value dentro da função (é meio esquisito mas funciona bem)
     // ver [https://en.cppreference.com/w/cpp/language/lambda.html ]
     //Podia ter usado um sscanf( mas assim ficava sem espaço pro buffer das imagens + buffer do SD
-    auto readNum = [&]() { //Tive que lever valores à 'moda antiga' para poupar algum espaço (c lê o caracter, value termina com o valor numerico)
+    auto readNum = [&]() {
         value = 0;
         // Ver se o byte é um numero (todos os numeros são menos que o valor ASCII de '0')
         while (songFile.available() && ( (c = songFile.read()) < '0' )) {}
@@ -591,7 +591,7 @@ class GameMap{ //Tem que ter: Logica do jogo, socre, combo, ver acertos e falhas
           }
 
           //Se a seta passou da zona de acerto e ainda está visível é um MISS
-          if (!currentA.missed && currentA.visible && currentA.y > HIT_Y + 15 && currentA.y > 10) { //A ultima condição é para evitar um bug
+          if (!currentA.missed && currentA.visible && currentA.y > HIT_Y + HIT_MISS && currentA.y > 10) { //A ultima condição é para evitar um bug
               currentA.eraseCurrent(); //ERASE APENAS É POSSIVEL QUANDO A SETA ESTÁ VISIVEL!!! (daí isto aparecer logo no inicio)
               currentA.missed = true;
               currentA.visible = false;
@@ -777,7 +777,7 @@ void loop(){
       bool found = false;
       
       while(true){
-        File entry = dir.openNextFile();
+        File entry = dir.openNextFile(); //Procura mapas até ao indice selecionaddo pelo usuario (inicialmente o indice é 0)
         if(!entry) break;
         
         if(entry.isDirectory()){
@@ -805,6 +805,8 @@ void loop(){
         dir.close();
       }
       
+
+      // Feedback visual da escolha (e escolha do indice)
       if(found){
         TFTscreen.text(selectedMapName, 40, 55);
       }
@@ -817,7 +819,7 @@ void loop(){
         currentMapIndex = (currentMapIndex == 0) ? 0 : currentMapIndex-1;
         TFTscreen.fillRect(0, 0, 180, 128, 0x0000);
       }
-    }while(!DistanceSensorOn());
+    }while(!DistanceSensorOn()); //Apenas acaba quando o sensor de distancia estiver 'ON'
     TFTscreen.setRotation(2);
     
     // Usar o mapa selecionado
