@@ -172,9 +172,9 @@ bool debouncedMenuInput(int btn) {
 bool ImageToScreen(int x, int y, char * name){
   //Assumes TFT.begin() was done
 
-  PImage img = TFTscreen.loadImage(name); //name ex: "DEEC.bmp"
+  PImage img = TFTscreen.loadImage(name);
   
-  if (!img.isValid()) { //Problems with image format
+  if (!img.isValid()) {
     Serial.println(F("failed image format!"));
     return false; 
   }
@@ -394,11 +394,11 @@ class GameMap{ //Tem que ter: Logica do jogo, socre, combo, ver acertos e falhas
   GameMap(){}  // construtor vazio
 
   void loadFromFile(char* path) {
-    // Create a buffer for the full filename
+    //Abrir ficheiro do mapa
     char filename[20];
     strcpy(filename, path);
     strcpy(FilePath, filename);
-    strcat(filename, "/MAP"); // append "MAP"
+    strcat(filename, "/MAP");
 
     File file = SD.open(filename, FILE_READ);
     if (!file) {
@@ -571,10 +571,32 @@ class GameMap{ //Tem que ter: Logica do jogo, socre, combo, ver acertos e falhas
     //-------------------------------
 
     if(duration <= CurrentTime){ //Verificação de final de jogo
-        playing = false;
-        songFile.close();
-        mapFile.close();
-        return;
+      playing = false;
+      songFile.close();
+      mapFile.close();
+
+      //Atualizar highscore se necessario
+      char path[25];
+      strcpy(path, "/MAPS/");
+      strcat(path, name.c_str());
+      strcat(path, "/HGS");
+  
+      File f = SD.open(path, FILE_READ);
+      int high = 0;
+      if(f){
+        high = f.parseInt();
+        f.close();
+      }
+  
+      if(score > high){
+        f = SD.open(path, FILE_WRITE);
+        if(f){
+          f.println(score);
+          f.close();
+        }
+      }
+
+      return;
     }
 
     //-------------Frame------------
@@ -750,27 +772,21 @@ void blockTillInput(){ //Uso duas vezes isto, uma função acaba por poupar espa
 
 void loop(){
     //NOTA PARA OTIMIZAÇÃO: Substituir ints que assumem apenas valores pequenos por bytes!
+    char tempPath[20];
+
     //Já não é necessário pois as imagens já têm espaço pra carregar (se não houver erros tá terminado!)
     LDRVal();
 
     //----MENU/INTRO----------
     //Substituido por chars em vez de arrays pra poupar espaço
-    char filename[13] = "DEECDAY/0.bmp";
-    const char* prefix_day = "DEECDAY/";
-    const char* prefix_night = "DEECN/";
+    const char* prefix = day ? "DEECDAY/" : "DEECN/"; 
+    byte prefix_len = day ? 8 : 7;
 
-    for(byte i=0; i<5; i++){ //Podia ter usado strcat ou strcpy mas isto acaba por ser mais leve
-      // Abrir pasta connsoante está de dia ou de noite
-      const char* prefix = day ? prefix_day : prefix_night;
-      byte prefix_len = day ? 8 : 7;
-      memcpy(filename, prefix, prefix_len);
-    
-      // Numero da imagem
-      filename[prefix_len] = '0' + i;
-    
-      strcpy(filename + prefix_len + 1, ".bmp"); //Não esquecer o .bmp
-    
-      ImageToScreen(0, 0, filename);
+    for(byte i=0; i<5; i++){
+      memcpy(tempPath, prefix, prefix_len);
+      tempPath[prefix_len] = '0' + i;
+      strcpy(tempPath + prefix_len + 1, ".bmp");
+      ImageToScreen(0, 0, tempPath);
   }
     
     //Esperar por um botão para prosseguir o codigo (criar uma função depois)
@@ -796,11 +812,11 @@ void loop(){
     TFTscreen.setRotation(2);
     
     i=1; //PARA TESTE!!!!!! REMOVER QUANDO ESTIVER MONTADO
-    char map_path[15] = "/MAPS/";
-    strcat(map_path, MapNames[i]);          // concatena
+    strcpy(tempPath, "/MAPS/");
+    strcat(tempPath, MapNames[i]);
 
     //----JOGO (carregar o mapa escolhido, inicializar mapa e jogar mapa)---------
-    CurrentMap.loadFromFile(map_path);
+    CurrentMap.loadFromFile(tempPath);
     //After selecting the map need to map.begin() and then on a loop do map.play()
 
     CurrentMap.begin();
@@ -811,6 +827,16 @@ void loop(){
     noTone(BUZZER); //Força o buzzer a desligar
     
     //---END SCREEN---- (score e assim)
+
+    //Lê o highscore
+    strcat(tempPath, "/HGS"); //Que bom que podemos reaproveitar o path anteior :)
+    File file = SD.open(tempPath, FILE_READ);
+    int HScore = 0;
+    if(file){
+      HScore = file.parseInt();
+      file.close();
+    }
+
     TFTscreen.background(0, 0, 0);
     TFTscreen.setRotation(0);
     TFTscreen.stroke(255,255,255);
@@ -819,8 +845,19 @@ void loop(){
     TFTscreen.setTextSize(1);
     TFTscreen.text(("Score: " + String(CurrentMap.score)).c_str(), 35, 55);
     TFTscreen.text(("MaxCombo: " + String(CurrentMap.maxCombo)).c_str(), 35, 75);
+    TFTscreen.text(("HighScore: " + String(HScore)).c_str(), 35, 95);
     TFTscreen.setRotation(2);
     
+    //Adiciona esta partida ao log (historico de partidas)
+    file = SD.open("/LOG", FILE_WRITE);
+    if(file){
+      file.print("[ ");
+      file.print(CurrentMap.name); 
+      file.print(", ");
+      file.print(CurrentMap.score);
+      file.println(" ]");
+      file.close();
+    }
     //Esperar por um botão para prosseguir o codigo
     blockTillInput();
 }
