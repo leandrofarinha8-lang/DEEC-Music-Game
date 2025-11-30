@@ -64,35 +64,9 @@
 #define BUZZER 7
 
 //----Para carregar nomes de mapas para uma array (não abusar na memoria se não as imagens podem falhar)-----
-#define MAX_MAPS 2
 #define MAX_NAME_LENGTH 13 //O nº de chars permitidos no SD é de 8 para o nome e 3 pra extensão (13 é suficiente para 8 chars de nome + '.' + 3 chars de extensão + '/0')
 
-char MapNames[MAX_MAPS][MAX_NAME_LENGTH];
 int MapsCount = 0;
-
-void loadMapNames(){
-  MapsCount = 0;
-
-  File dir = SD.open("/MAPS");
-
-  // Ler tudo na pasta
-  while (true) {
-    File newFile = dir.openNextFile();
-    if (!newFile) break;
-
-    if (newFile.isDirectory()){ //Os mapas seram apenas diretórios
-      if (MapsCount < MAX_MAPS) {
-        strncpy(MapNames[MapsCount], newFile.name(), MAX_NAME_LENGTH - 1);
-        MapNames[MapsCount][MAX_NAME_LENGTH - 1] = '\0'; //O problema de trabalhar com c_strings :(
-        MapsCount++;
-      }
-    }
-
-    newFile.close();
-  }
-  //Neste ponto todos os (nomes dos) mapas lidos estão na array global, depois no menu é apenas usar os botões pra alterarem o index e o sensor de distancia pra escolher o mapa
-  dir.close();
-}
 
 //------------------------------------------------------------
 
@@ -762,74 +736,105 @@ void setup(){
   //Ligar o SD
   SD.begin(sd);
   
-  //Carregar nome dos mapas disponiveis
-  loadMapNames();
 }
 
 void blockTillInput(){ //Uso duas vezes isto, uma função acaba por poupar espaço e ser mais legivel
   do{delay(10);}while( !(debouncedMenuInput(PUSH_LEFT) || debouncedMenuInput(PUSH_RIGHT) || DistanceSensorOn()) );
 }
 
+int totalMaps = 0;
 void loop(){
-    //NOTA PARA OTIMIZAÇÃO: Substituir ints que assumem apenas valores pequenos por bytes!
     char tempPath[20];
-
-    //Já não é necessário pois as imagens já têm espaço pra carregar (se não houver erros tá terminado!)
     LDRVal();
 
-    //----MENU/INTRO----------
-    //Substituido por chars em vez de arrays pra poupar espaço
-    const char* prefix = day ? "DEECDAY/" : "DEECN/"; 
-    byte prefix_len = day ? 8 : 7;
+    //----MENU/INTRO---------- (mostrar apenas a primeira vez que inicia o jogo)
+    if(totalMaps == 0){
+      const char* prefix = day ? "DEECDAY/" : "DEECN/"; 
+      byte prefix_len = day ? 8 : 7;
 
-    for(byte i=0; i<5; i++){
-      memcpy(tempPath, prefix, prefix_len);
-      tempPath[prefix_len] = '0' + i;
-      strcpy(tempPath + prefix_len + 1, ".bmp");
-      ImageToScreen(0, 0, tempPath);
-  }
+      for(byte i=0; i<5; i++){
+        memcpy(tempPath, prefix, prefix_len);
+        tempPath[prefix_len] = '0' + i;
+        strcpy(tempPath + prefix_len + 1, ".bmp");
+        ImageToScreen(0, 0, tempPath);
+      }
+      
+      blockTillInput();
+    }
+    //-----SELEÇÃO DE MAPA (COM O SD)-----
+    int currentMapIndex = 0;
+    char selectedMapName[MAX_NAME_LENGTH];
     
-    //Esperar por um botão para prosseguir o codigo (criar uma função depois)
-    blockTillInput();
-    
-    //-----SELEÇÃO DE MAPA-----
-    byte i=0;
     TFTscreen.background(0, 0, 0);
     TFTscreen.setRotation(0);
     TFTscreen.stroke(255,255,255);
     TFTscreen.setTextSize(2);
+    
     do{
-      TFTscreen.text(MapNames[i], 40, 55);
+      // Encontrar e mostrar o mapa atual
+      File dir = SD.open("/MAPS");
+      byte foundIndex = 0;
+      bool found = false;
+      
+      while(true){
+        File entry = dir.openNextFile();
+        if(!entry) break;
+        
+        if(entry.isDirectory()){
+          if(foundIndex == currentMapIndex){
+            strcpy(selectedMapName, entry.name());
+            found = true;
+            entry.close();
+            break;
+          }
+          foundIndex++;
+        }
+        entry.close();
+      }
+      dir.close();
+      
+      // Contar numero de mapas (apenas quando ainda não sabemos o numero)
+      if(totalMaps == 0){
+        dir = SD.open("/MAPS");
+        while(true){
+          File entry = dir.openNextFile();
+          if(!entry) break;
+          if(entry.isDirectory()) totalMaps++;
+          entry.close();
+        }
+        dir.close();
+      }
+      
+      if(found){
+        TFTscreen.text(selectedMapName, 40, 55);
+      }
+
       if(debouncedMenuInput(PUSH_RIGHT)){
-        i = (i == MapsCount-1)? MapsCount-1 : i+1;
-        TFTscreen.fillRect(0, 0, 180, 128, 0x0000); //Apagar texto apenas se o texto mudou
+        currentMapIndex = (currentMapIndex >= totalMaps-1) ? totalMaps-1 : currentMapIndex+1;
+        TFTscreen.fillRect(0, 0, 180, 128, 0x0000);
       }
       if(debouncedMenuInput(PUSH_LEFT)){
-        i = (i == 0)? 0 : i+1;
-        TFTscreen.fillRect(0, 0, 180, 128, 0x0000); //Apagar texto apenas se o texto mudou
+        currentMapIndex = (currentMapIndex == 0) ? 0 : currentMapIndex-1;
+        TFTscreen.fillRect(0, 0, 180, 128, 0x0000);
       }
     }while(!DistanceSensorOn());
     TFTscreen.setRotation(2);
     
-    i=1; //PARA TESTE!!!!!! REMOVER QUANDO ESTIVER MONTADO
+    // Usar o mapa selecionado
     strcpy(tempPath, "/MAPS/");
-    strcat(tempPath, MapNames[i]);
+    strcat(tempPath, selectedMapName);
 
-    //----JOGO (carregar o mapa escolhido, inicializar mapa e jogar mapa)---------
+    //----JOGO---------
     CurrentMap.loadFromFile(tempPath);
-    //After selecting the map need to map.begin() and then on a loop do map.play()
-
     CurrentMap.begin();
 
     while(CurrentMap.playing){
       CurrentMap.play();
     }
-    noTone(BUZZER); //Força o buzzer a desligar
+    noTone(BUZZER);
     
-    //---END SCREEN---- (score e assim)
-
-    //Lê o highscore
-    strcat(tempPath, "/HGS"); //Que bom que podemos reaproveitar o path anteior :)
+    //---END SCREEN----
+    strcat(tempPath, "/HGS");
     File file = SD.open(tempPath, FILE_READ);
     int HScore = 0;
     if(file){
@@ -848,7 +853,7 @@ void loop(){
     TFTscreen.text(("HighScore: " + String(HScore)).c_str(), 20, 95);
     TFTscreen.setRotation(2);
     
-    //Adiciona esta partida ao log (historico de partidas)
+    // Log
     file = SD.open("/LOG", FILE_WRITE);
     if(file){
       file.print("[ ");
@@ -858,6 +863,6 @@ void loop(){
       file.println(" ]");
       file.close();
     }
-    //Esperar por um botão para prosseguir o codigo
+    
     blockTillInput();
 }
