@@ -378,11 +378,12 @@ class GameMap{ //Tem que ter: Logica do jogo, socre, combo, ver acertos e falhas
   unsigned long LastUpdate;
   bool playing = false;
   String name;
-  Arrow * layout;
+  Arrow layout[MAX_ARROWS];
   int ArrowNum;
   int TotalArrows; // Total de setas no mapa
   int score = 0;
   int combo = 0;
+  int maxCombo = 0;
   char FilePath[20];
   File songFile;
   File mapFile;
@@ -390,7 +391,7 @@ class GameMap{ //Tem que ter: Logica do jogo, socre, combo, ver acertos e falhas
   int noteFreq = 0, noteDur = 0;
   int currentArrowIndex = 0; //Indice da proxima seta a carregar
 
-  GameMap(){layout = new Arrow[MAX_ARROWS];}  // construtor vazio
+  GameMap(){}  // construtor vazio
 
   void loadFromFile(char* path) {
     // Create a buffer for the full filename
@@ -706,6 +707,7 @@ class GameMap{ //Tem que ter: Logica do jogo, socre, combo, ver acertos e falhas
             Serial.println("MISS!");
             break;
     }
+    maxCombo = (combo > maxCombo)? combo : maxCombo;
     Serial.print("Score: "); 
     Serial.println(score);
     Serial.print("Combo: "); 
@@ -757,17 +759,16 @@ void loop(){
     const char* prefix_day = "DEECDAY/";
     const char* prefix_night = "DEECN/";
 
-    for(byte i=0; i<5; i++){
-      // Copy appropriate prefix
+    for(byte i=0; i<5; i++){ //Podia ter usado strcat ou strcpy mas isto acaba por ser mais leve
+      // Abrir pasta connsoante está de dia ou de noite
       const char* prefix = day ? prefix_day : prefix_night;
       byte prefix_len = day ? 8 : 7;
       memcpy(filename, prefix, prefix_len);
     
-      // Add number
+      // Numero da imagem
       filename[prefix_len] = '0' + i;
     
-      // Add extension
-      strcpy(filename + prefix_len + 1, ".bmp");
+      strcpy(filename + prefix_len + 1, ".bmp"); //Não esquecer o .bmp
     
       ImageToScreen(0, 0, filename);
   }
@@ -816,7 +817,8 @@ void loop(){
     TFTscreen.setTextSize(2);
     TFTscreen.text("GAME OVER!", 7, 5);
     TFTscreen.setTextSize(1);
-    TFTscreen.text(("SCORE: " + String(CurrentMap.score)).c_str(), 45, 55);
+    TFTscreen.text(("Score: " + String(CurrentMap.score)).c_str(), 35, 55);
+    TFTscreen.text(("MaxCombo: " + String(CurrentMap.maxCombo)).c_str(), 35, 75);
     TFTscreen.setRotation(2);
     
     //Esperar por um botão para prosseguir o codigo
