@@ -843,9 +843,9 @@ void loop(){
     TFTscreen.setTextSize(2);
     TFTscreen.text("GAME OVER!", 7, 5);
     TFTscreen.setTextSize(1);
-    TFTscreen.text(("Score: " + String(CurrentMap.score)).c_str(), 35, 55);
-    TFTscreen.text(("MaxCombo: " + String(CurrentMap.maxCombo)).c_str(), 35, 75);
-    TFTscreen.text(("HighScore: " + String(HScore)).c_str(), 35, 95);
+    TFTscreen.text(("Score: " + String(CurrentMap.score)).c_str(), 20, 55);
+    TFTscreen.text(("MaxCombo: " + String(CurrentMap.maxCombo)).c_str(), 20, 75);
+    TFTscreen.text(("HighScore: " + String(HScore)).c_str(), 20, 95);
     TFTscreen.setRotation(2);
     
     //Adiciona esta partida ao log (historico de partidas)
