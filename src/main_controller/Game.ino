@@ -180,6 +180,7 @@ bool DistanceSensorOn(){
   long distance = 0;
   for(int i=0; i<3; i++){ //3 repetições para evitar flutuações
     distance += measureDistance();
+    delay(100); //dar algum tempo entre repetições
   }
 
   if(distance/3 <= DistanceON_Value)
@@ -761,6 +762,9 @@ void loop(){
       
       blockTillInput();
     }
+    while (DistanceSensorOn()) {
+      delay(50);
+    }  //para o input não ser lido duas vezes
     //-----SELEÇÃO DE MAPA (COM O SD)-----
     int currentMapIndex = 0;
     char selectedMapName[MAX_NAME_LENGTH];
