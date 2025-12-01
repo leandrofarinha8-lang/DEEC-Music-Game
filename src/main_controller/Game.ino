@@ -59,6 +59,7 @@
 
 //Pinos do LDR
 #define LDR A4
+#define LDR_LIMIAR 500
 
 //Pino do buzzer
 #define BUZZER 7
@@ -192,13 +193,15 @@ bool DistanceSensorOn(){
 
 //Função pro LDR (substitui por void em vez de bool porque não retorna nada)
 void LDRVal(){
-  int val;
-  val=analogRead(LDR);
+  int val=0;
+  for(byte i=0;i<5;i++){
+    val+=analogRead(LDR);
+  }
 
-  if (val<999){
+  if (val/5 < LDR_LIMIAR){
     day = true;
   }
-  else if (val>=999){
+  else {
     day = false;
   }
 }
