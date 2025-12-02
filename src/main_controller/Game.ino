@@ -555,8 +555,7 @@ class GameMap{ //Tem que ter: Logica do jogo, socre, combo, ver acertos e falhas
 
       //Atualizar highscore se necessario
       char path[25];
-      strcpy(path, "/MAPS/");
-      strcat(path, name.c_str());
+      strcat(path, FilePath); //Neste momento o file path já é "/MAPS/MAP_NAME" (fiz isso no load)
       strcat(path, "/HGS");
   
       File f = SD.open(path, FILE_READ);
@@ -567,9 +566,10 @@ class GameMap{ //Tem que ter: Logica do jogo, socre, combo, ver acertos e falhas
       }
   
       if(score > high){
-        f = SD.open(path, FILE_WRITE);
-        if(f){
-          f.println(score);
+        SD.remove(path);   // Recriar ficheiro para apagar o highscore antigo
+        File f = SD.open(path, FILE_WRITE);
+        if (f) {
+          f.println(score); //Novo Highscore
           f.close();
         }
       }
