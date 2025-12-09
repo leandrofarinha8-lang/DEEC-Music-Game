@@ -739,7 +739,6 @@ void setup(){
 
   //Ligar o SD
   SD.begin(sd);
-  
 }
 
 void blockTillInput(){ //Uso duas vezes isto, uma função acaba por poupar espaço e ser mais legivel
@@ -754,7 +753,7 @@ void loop(){
     //----MENU/INTRO---------- (mostrar apenas a primeira vez que inicia o jogo)
     if(totalMaps == 0){
       const char* prefix = day ? "DEECDAY/" : "DEECN/"; 
-      byte prefix_len = day ? 8 : 7;
+      byte prefix_len = day ? 8 : 6;
 
       for(byte i=0; i<5; i++){
         memcpy(tempPath, prefix, prefix_len);
