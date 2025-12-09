@@ -408,6 +408,20 @@ class GameMap{ //Tem que ter: Logica do jogo, socre, combo, ver acertos e falhas
 
   
   void begin() {
+    //Obter background do nivel dependendo se é de dia ou noite (MOVI PRA CIMA PRA N TER ISTO ABERTO JUNTO COM OUTROS FICHEIRO [R.I.P Memoria do arduino])
+    char filename[20];
+    strcpy(filename, FilePath);
+
+    if(day){
+      strcat(filename, "/D.bmp");
+    }
+    else{
+      strcat(filename, "/N.bmp");
+    }
+
+    //Carregar background do nivel
+    ImageToScreen(0, 0, filename);
+
     //---Criar ponto de acesso ao ficheiro da musica---
     char songPath[16];
     strcpy(songPath, FilePath);
@@ -434,20 +448,6 @@ class GameMap{ //Tem que ter: Logica do jogo, socre, combo, ver acertos e falhas
     LastUpdate = 0;
     playing = true;
     CurrentTime = 0;
-
-    //Obter background do nivel dependendo se é de dia ou noite
-    char filename[20];
-    strcpy(filename, FilePath);
-
-    if(day){
-      strcat(filename, "/D.bmp");
-    }
-    else{
-      strcat(filename, "/N.bmp");
-    }
-
-    //Carregar background do nivel
-    ImageToScreen(0, 0, filename);
 
     //Antes de começar fazer uma contagem decrescente
     TFTscreen.setRotation(0);
