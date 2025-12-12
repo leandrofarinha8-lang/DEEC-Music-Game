@@ -54,12 +54,12 @@
 
 //Pinos para o sensor de distancia
 #define echo 5
-#define trigger 6
+#define trigger 6                                                                                                                             
 #define DistanceON_Value 10 //Distancia para a qual o sensor de distancia se 'ativa'
 
 //Pinos do LDR
 #define LDR A4
-#define LDR_LIMIAR 500
+#define LDR_LIMIAR 400
 
 //Pino do buzzer
 #define BUZZER 7
@@ -408,7 +408,6 @@ class GameMap{ //Tem que ter: Logica do jogo, socre, combo, ver acertos e falhas
 
   
   void begin() {
-    //Obter background do nivel dependendo se é de dia ou noite (MOVI PRA CIMA PRA N TER ISTO ABERTO JUNTO COM OUTROS FICHEIRO [R.I.P Memoria do arduino])
     char filename[20];
     strcpy(filename, FilePath);
 
@@ -449,6 +448,8 @@ class GameMap{ //Tem que ter: Logica do jogo, socre, combo, ver acertos e falhas
     playing = true;
     CurrentTime = 0;
 
+    //Obter background do nivel dependendo se é de dia ou noite
+    
     //Antes de começar fazer uma contagem decrescente
     TFTscreen.setRotation(0);
     TFTscreen.setTextSize(2);
@@ -552,27 +553,6 @@ class GameMap{ //Tem que ter: Logica do jogo, socre, combo, ver acertos e falhas
       playing = false;
       songFile.close();
       mapFile.close();
-
-      //Atualizar highscore se necessario
-      char path[25];
-      strcat(path, FilePath); //Neste momento o file path já é "/MAPS/MAP_NAME" (fiz isso no load)
-      strcat(path, "/HGS");
-  
-      File f = SD.open(path, FILE_READ);
-      int high = 0;
-      if(f){
-        high = f.parseInt();
-        f.close();
-      }
-  
-      if(score > high){
-        SD.remove(path);   // Recriar ficheiro para apagar o highscore antigo
-        File f = SD.open(path, FILE_WRITE);
-        if (f) {
-          f.println(score); //Novo Highscore
-          f.close();
-        }
-      }
 
       return;
     }
@@ -739,6 +719,7 @@ void setup(){
 
   //Ligar o SD
   SD.begin(sd);
+ 
 }
 
 void blockTillInput(){ //Uso duas vezes isto, uma função acaba por poupar espaço e ser mais legivel
@@ -842,13 +823,6 @@ void loop(){
     noTone(BUZZER);
     
     //---END SCREEN----
-    strcat(tempPath, "/HGS");
-    File file = SD.open(tempPath, FILE_READ);
-    int HScore = 0;
-    if(file){
-      HScore = file.parseInt();
-      file.close();
-    }
 
     TFTscreen.background(0, 0, 0);
     TFTscreen.setRotation(0);
@@ -858,11 +832,10 @@ void loop(){
     TFTscreen.setTextSize(1);
     TFTscreen.text(("Score: " + String(CurrentMap.score)).c_str(), 20, 55);
     TFTscreen.text(("MaxCombo: " + String(CurrentMap.maxCombo)).c_str(), 20, 75);
-    TFTscreen.text(("HighScore: " + String(HScore)).c_str(), 20, 95);
     TFTscreen.setRotation(2);
     
     // Log
-    file = SD.open("/LOG", FILE_WRITE);
+    File file = SD.open("/LOG", FILE_WRITE);
     if(file){
       file.print("[ ");
       file.print(CurrentMap.name); 
@@ -872,5 +845,6 @@ void loop(){
       file.close();
     }
     
+    CurrentMap.maxCombo = 0; //reset explicito (tinhamos pouco tempo pra corrigir)
     blockTillInput();
 }
