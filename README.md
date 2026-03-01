@@ -50,7 +50,10 @@ Note: a frenquency of 0 is equal to a pause.
 The TFT screen we're using uses the BGR565 color format, the orientation of the pictures is upside down. So to add backgrounds you'll need to change the color channels and the roation of the image.
 On each map folder there should be two bmp images. One named D.bmp which will be the one used during day (when the LDR detects high luminosity) and other named N.bmp which will be used at night.
 
-<img width="3000" height="4000" alt="image" src="https://github.com/user-attachments/assets/da26dde6-09c6-48a0-b6dd-b3be624f7fd6" />
+<img width="300" height="400" alt="image" src="https://github.com/user-attachments/assets/da26dde6-09c6-48a0-b6dd-b3be624f7fd6" />
+<img width="300" height="400" alt="image" src="https://github.com/user-attachments/assets/6157dec3-ffba-4431-8c83-34350d519b0b" />
+<img width="300" height="400" alt="image" src="https://github.com/user-attachments/assets/e5a698e9-7ad5-44dc-90a5-e55c07ce6ad9" />
+
 
 
 
