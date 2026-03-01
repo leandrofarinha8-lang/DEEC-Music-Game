@@ -1,5 +1,8 @@
 # DEEC-Music-Game
 
+## A small video of the porject
+https://drive.google.com/file/d/1O8VeOooAz9D24pQz-aa92cZrcmdjpqDR/view?usp=sharing
+
 ## Data
 This contains all the data that should be stored on the SD for a basic build of the game. If you want to create maps add a folder with the map name to /MAPS and follow the structure described bellow.
 
