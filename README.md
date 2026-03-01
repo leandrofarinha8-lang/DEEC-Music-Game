@@ -1,10 +1,5 @@
 # DEEC-Music-Game
 
-## Tests
-~On the *tests* folder the files should be able to run by themselves (or have the least amount of dependencies possible), this will make testing easier. On the src *folder* the code should be more compartimentated and reusable (ex: have a graphics library, pins definitions, etc).~
-
-If no more errors are found tests are done.
-
 ## Data
 This contains all the data that should be stored on the SD for a basic build of the game. If you want to create maps add a folder with the map name to /MAPS and follow the structure described bellow.
 
